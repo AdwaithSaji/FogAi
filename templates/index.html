@@ -1,0 +1,1568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FogAI — Live Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── Variables ───────────────────────────────────────── */
+:root {
+  --bg:       #05090f;
+  --surface:  #0c1422;
+  --surface2: #0f1c30;
+  --border:   #1a3050;
+  --fog:      #00d4ff;
+  --cloud:    #4a9eff;
+  --both:     #cc44ff;
+  --safe:     #00ff88;
+  --warn:     #ffb800;
+  --crit:     #ff3366;
+  --text:     #d0e4ff;
+  --dim:      #4a6a8a;
+  --mono:     'Share Tech Mono', monospace;
+  --title:    'Orbitron', sans-serif;
+}
+/* ── Reset ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* ── Header ──────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #060f1e 0%, #0a1828 50%, #060f1e 100%);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  gap: 12px;
+}
+.hdr-title h1 {
+  font-family: var(--title);
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+  text-shadow: 0 0 20px rgba(0,212,255,0.5);
+  line-height: 1;
+}
+.hdr-title p {
+  font-size: 0.65rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+  margin-top: 2px;
+}
+.hdr-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.status-badge {
+  font-family: var(--title);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  padding: 3px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--safe);
+  color: var(--safe);
+  background: rgba(0,255,136,0.08);
+  transition: all 0.3s;
+}
+.status-badge.warn  { border-color: var(--warn); color: var(--warn); background: rgba(255,184,0,0.08); }
+.status-badge.crit  { border-color: var(--crit); color: var(--crit); background: rgba(255,51,102,0.08);
+  animation: pulse-badge 0.6s ease-in-out infinite; }
+@keyframes pulse-badge {
+  0%,100% { box-shadow: 0 0 6px rgba(255,51,102,0.4); }
+  50%      { box-shadow: 0 0 18px rgba(255,51,102,0.9); }
+}
+.cycle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.65rem;
+  color: var(--dim);
+}
+.cycle-bar {
+  width: 160px; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.cycle-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--fog), var(--both));
+  width: 0%;
+  transition: width 0.5s ease;
+  border-radius: 2px;
+}
+.hdr-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-size: 0.62rem;
+  color: var(--dim);
+}
+.hdr-right span { display: block; }
+#live-clock { color: var(--fog); }
+.btn-restart {
+  font-family: var(--title);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  padding: 4px 12px;
+  border: 1px solid var(--fog);
+  background: transparent;
+  color: var(--fog);
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+  margin-top: 4px;
+}
+.btn-restart:hover { background: rgba(0,212,255,0.1); }
+/* ── Main grid ───────────────────────────────────────── */
+.dashboard {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 12px;
+  padding: 12px;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+/* ── Card ────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  position: relative;
+  overflow: hidden;
+}
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--fog), transparent);
+  opacity: 0.4;
+}
+.card-title {
+  font-family: var(--title);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  color: var(--dim);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+/* ── Architecture card (full width) ─────────────────── */
+.arch-card {
+  grid-column: 1 / -1;
+  padding: 14px 16px 10px;
+}
+.arch-card .card-title { margin-bottom: 8px; }
+#arch-svg { width: 100%; height: 190px; }
+/* SVG node styles */
+.sv-node { transition: all 0.4s; }
+.sv-fog-glow { transition: all 0.4s; }
+/* ── Sensor card ─────────────────────────────────────── */
+.sensors-card { grid-column: 1; }
+.sensor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+/* Temperature gauge */
+.temp-gauge-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 8px 8px;
+}
+.gauge-label { font-size: 0.6rem; color: var(--dim); letter-spacing: 0.1em; }
+#temp-svg { width: 140px; height: 85px; }
+/* Metric card */
+.metric-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.metric-name { font-size: 0.58rem; color: var(--dim); letter-spacing: 0.1em; text-transform: uppercase; }
+.metric-value { font-size: 1.3rem; font-weight: bold; transition: color 0.3s; }
+.metric-unit { font-size: 0.65rem; color: var(--dim); margin-left: 2px; }
+.metric-bar-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.metric-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease, background 0.3s; }
+/* Network status */
+.net-status { font-size: 0.62rem; }
+/* ── Decision card ───────────────────────────────────── */
+.decision-card { grid-column: 2; }
+.dest-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68px;
+  border-radius: 8px;
+  border: 2px solid var(--fog);
+  background: rgba(0,212,255,0.07);
+  margin-bottom: 10px;
+  transition: all 0.3s;
+}
+.dest-label {
+  font-family: var(--title);
+  font-size: 1.4rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+  transition: color 0.3s;
+}
+.dest-cloud  { border-color: var(--cloud); background: rgba(74,158,255,0.07); }
+.dest-cloud .dest-label { color: var(--cloud); }
+.dest-both   { border-color: var(--both); background: rgba(204,68,255,0.07); }
+.dest-both .dest-label { color: var(--both); }
+.dest-crit { animation: pulse-dest 0.5s ease-in-out infinite; }
+@keyframes pulse-dest {
+  0%,100% { box-shadow: 0 0 8px rgba(255,51,102,0.3); }
+  50%      { box-shadow: 0 0 24px rgba(255,51,102,0.8); }
+}
+/* Risk gauge */
+.risk-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.62rem;
+  color: var(--dim);
+}
+.risk-value { font-size: 1rem; font-weight: bold; color: var(--safe); transition: color 0.3s; }
+.risk-bar-track { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-bottom: 8px; }
+.risk-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--safe), var(--warn), var(--crit));
+  background-size: 300% 100%;
+  background-position: 0% 50%;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+/* Rules list */
+.rules-list { list-style: none; font-size: 0.62rem; min-height: 40px; }
+.rules-list li { color: var(--warn); padding: 1px 0; }
+.rules-list li.crit { color: var(--crit); }
+.rules-list li::before { content: '▶ '; }
+/* Action tag */
+.action-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  margin-top: 6px;
+  transition: all 0.3s;
+}
+/* Confidence */
+.conf-row { display: flex; justify-content: space-between; font-size: 0.62rem; margin-top: 8px; }
+/* ── Latency chart card ──────────────────────────────── */
+.latency-card { grid-column: 1; }
+.latency-card canvas { max-height: 220px; }
+/* ── Right column (dist + stats) ────────────────────── */
+.right-col {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dist-card canvas { max-height: 150px; }
+/* Stats grid */
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.stat-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  text-align: center;
+}
+.stat-num  { font-size: 1.5rem; font-weight: bold; display: block; transition: color 0.3s; }
+.stat-name { font-size: 0.55rem; color: var(--dim); letter-spacing: 0.08em; display: block; text-transform: uppercase; }
+/* ── Event log card (full width) ────────────────────── */
+.log-card {
+  grid-column: 1 / -1;
+  max-height: 240px;
+}
+.event-log {
+  max-height: 180px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.event-log::-webkit-scrollbar { width: 4px; }
+.event-log::-webkit-scrollbar-thumb { background: var(--border); }
+.log-entry {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(26,48,80,0.4);
+  font-size: 0.65rem;
+  animation: log-in 0.3s ease;
+}
+@keyframes log-in {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.log-cyc { color: var(--dim); min-width: 42px; }
+.log-time { color: var(--dim); min-width: 60px; }
+.log-msg  { flex: 1; }
+.log-msg.safe  { color: var(--safe); }
+.log-msg.warn  { color: var(--warn); }
+.log-msg.crit  { color: var(--crit); font-weight: bold; }
+.log-msg.cloud { color: var(--cloud); }
+.log-msg.dim   { color: var(--dim); }
+/* ── About section ───────────────────────────────────── */
+.about-section {
+  max-width: 1600px;
+  margin: 4px auto 20px;
+  padding: 0 12px;
+}
+.about-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 28px;
+  position: relative;
+  overflow: hidden;
+}
+.about-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--fog), var(--both), var(--cloud));
+}
+.about-title {
+  font-family: var(--title);
+  font-size: 1rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+  margin-bottom: 4px;
+}
+.about-sub {
+  font-size: 0.68rem;
+  color: var(--dim);
+  margin-bottom: 20px;
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.about-col h3 {
+  font-family: var(--title);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  color: var(--fog);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.about-col p, .about-col li {
+  font-size: 0.65rem;
+  color: #8aaabf;
+  line-height: 1.7;
+}
+.about-col ul { list-style: none; }
+.about-col ul li::before { content: '› '; color: var(--fog); }
+.rule-table { width: 100%; border-collapse: collapse; font-size: 0.62rem; }
+.rule-table th {
+  text-align: left;
+  color: var(--dim);
+  font-family: var(--title);
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.rule-table td { padding: 4px 8px; color: #8aaabf; vertical-align: top; }
+.rule-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+.highlight { color: var(--fog); font-weight: bold; }
+/* ── About section extras ────────────────────────────── */
+.sec-label {
+  font-family: var(--title);
+  font-size: 0.58rem;
+  letter-spacing: 0.18em;
+  color: var(--dim);
+  margin-bottom: 2px;
+}
+.about-p {
+  font-size: 0.67rem;
+  color: #8aaabf;
+  line-height: 1.8;
+}
+.comp-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+.comp-title {
+  font-family: var(--title);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+.comp-body {
+  font-size: 0.62rem;
+  color: #6a8aaa;
+  line-height: 1.7;
+}
+.result-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+}
+.result-num   { font-family: var(--title); font-size: 2rem; font-weight: 900; }
+.result-label { font-size: 0.65rem; color: var(--text); margin: 4px 0; font-weight: bold; }
+.result-desc  { font-size: 0.6rem; color: var(--dim); line-height: 1.6; }
+.tech-tag {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 12px;
+  font-size: 0.6rem;
+  color: var(--fog);
+  letter-spacing: 0.05em;
+}
+/* ── Footer ──────────────────────────────────────────── */
+.site-footer {
+  background: #060c18;
+  border-top: 1px solid var(--border);
+  padding: 20px 0 24px;
+  margin-top: 4px;
+}
+.footer-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.footer-logo {
+  font-family: var(--title);
+  font-size: 1.1rem;
+  letter-spacing: 0.2em;
+  color: var(--fog);
+  text-shadow: 0 0 16px rgba(0,212,255,0.4);
+}
+.footer-tagline {
+  font-size: 0.6rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+}
+.footer-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.footer-field {
+  font-size: 0.6rem;
+  color: var(--dim);
+  letter-spacing: 0.05em;
+}
+.footer-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+.footer-dev-label {
+  font-size: 0.58rem;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.footer-dev-name {
+  font-family: var(--title);
+  font-size: 1.15rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+  text-shadow: 0 0 18px rgba(0,212,255,0.5);
+}
+/* ── Summary banner (in-log, no popup) ───────────────── */
+.summary-banner {
+  border: 1px solid var(--fog);
+  border-radius: 8px;
+  background: rgba(0,212,255,0.06);
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  font-size: 0.63rem;
+}
+.summary-banner .sb-title {
+  font-family: var(--title);
+  font-size: 0.68rem;
+  color: var(--fog);
+  letter-spacing: 0.12em;
+  margin-bottom: 6px;
+}
+.summary-banner .sb-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 14px;
+}
+.summary-banner .sb-row { display: flex; justify-content: space-between; gap: 8px; }
+.summary-banner .sb-label { color: var(--dim); }
+.summary-banner .sb-val   { font-weight: bold; }
+/* ── Misc utilities ──────────────────────────────────── */
+.color-fog   { color: var(--fog) !important; }
+.color-cloud { color: var(--cloud) !important; }
+.color-both  { color: var(--both) !important; }
+.color-safe  { color: var(--safe) !important; }
+.color-warn  { color: var(--warn) !important; }
+.color-crit  { color: var(--crit) !important; }
+</style>
+</head>
+
+<body>
+<!-- ── Header ───────────────────────────────────────── -->
+<header>
+  <div class="hdr-title">
+    <h1>FOGAI</h1>
+    <p>LOW-LATENCY INTELLIGENT IoT ARCHITECTURE</p>
+  </div>
+
+  <div class="hdr-center">
+    <div class="status-badge" id="status-badge">CONNECTING...</div>
+    <div class="cycle-row">
+      <span>CYCLE</span>
+      <span id="cyc-cur">0</span><span>/</span><span id="cyc-tot">60</span>
+      <div class="cycle-bar"><div class="cycle-fill" id="cyc-fill"></div></div>
+      <span id="cyc-pct">0%</span>
+    </div>
+  </div>
+
+  <div class="hdr-right">
+    <span>NODE: <span class="color-fog" id="hdr-node">FOG-NODE-001</span></span>
+    <span>MACHINE: <span id="hdr-machine">CNC-MACHINE-07</span></span>
+    <span id="live-clock">--:--:--</span>
+    <button class="btn-restart" onclick="restartSim()">⟳ RESTART</button>
+  </div>
+</header>
+
+<!-- ── Main Dashboard ───────────────────────────────── -->
+<div class="dashboard">
+
+  <!-- Architecture flow (full width) -->
+  <div class="card arch-card">
+    <div class="card-title">Live Data Flow Architecture</div>
+    <svg id="arch-svg" viewBox="0 0 900 190" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <!-- Glow filters -->
+        <filter id="glow-c" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <filter id="glow-y" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <!-- Arrow markers -->
+        <marker id="arr-fog"    markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0 0,7 3.5,0 7" fill="#00d4ff"/></marker>
+        <marker id="arr-cloud"  markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0 0,7 3.5,0 7" fill="#4a9eff"/></marker>
+        <marker id="arr-action" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><polygon points="0 0,7 3.5,0 7" fill="#00ff88"/></marker>
+        <!-- Motion paths (invisible) -->
+        <path id="mp-iot-fog"    d="M 182 95 L 310 95"/>
+        <path id="mp-fog-cloud"  d="M 518 72 L 642 42"/>
+        <path id="mp-fog-action" d="M 518 118 L 642 150"/>
+      </defs>
+
+      <!-- ── IoT Sensor node ── -->
+      <rect x="8" y="55" width="170" height="80" rx="9" fill="#0a1828" stroke="#00d4ff" stroke-width="1.5" opacity="0.85"/>
+      <text x="93" y="84" text-anchor="middle" fill="#00d4ff" font-size="10.5" font-family="monospace" font-weight="bold" letter-spacing="1">IoT SENSOR</text>
+      <text x="93" y="100" text-anchor="middle" fill="#4a8aaf" font-size="8.5" font-family="monospace">CNC-MACHINE-07</text>
+      <text x="93" y="115" text-anchor="middle" fill="#2a5070" font-size="7.5" font-family="monospace">Temp · CPU · Vibr · Net</text>
+      <!-- Sensor pulse dot -->
+      <circle cx="160" cy="68" r="4" fill="#00d4ff" opacity="0.7">
+        <animate attributeName="r" values="3;5;3" dur="1.8s" repeatCount="indefinite"/>
+        <animate attributeName="opacity" values="0.7;1;0.7" dur="1.8s" repeatCount="indefinite"/>
+      </circle>
+
+      <!-- ── Arrow: IoT → Fog ── -->
+      <line id="line-iot-fog" x1="178" y1="95" x2="308" y2="95" stroke="#00d4ff" stroke-width="1.8" opacity="0.55" marker-end="url(#arr-fog)"/>
+
+      <!-- ── Fog AI Node (center) ── -->
+      <rect id="fog-box" x="312" y="32" width="202" height="126" rx="9" fill="#0a1530" stroke="#00d4ff" stroke-width="2.2" filter="url(#glow-c)"/>
+      <text x="413" y="60" text-anchor="middle" fill="#00d4ff" font-size="11.5" font-family="monospace" font-weight="bold" letter-spacing="1">FOG AI NODE</text>
+      <text x="413" y="78" text-anchor="middle" fill="#4a8aaf" font-size="8" font-family="monospace">Safety Rules  R1 – R5</text>
+      <text x="413" y="92" text-anchor="middle" fill="#4a8aaf" font-size="8" font-family="monospace">Weighted Risk Scoring</text>
+      <text x="413" y="106" text-anchor="middle" fill="#4a8aaf" font-size="8" font-family="monospace">Score-Based Routing</text>
+      <text x="413" y="122" text-anchor="middle" fill="#2a5070" font-size="7.5" font-family="monospace">FOG-NODE-001</text>
+      <text id="fog-action-txt" x="413" y="148" text-anchor="middle" fill="#00d4ff" font-size="8.5" font-family="monospace">— waiting —</text>
+
+      <!-- ── Arrow: Fog → Cloud ── -->
+      <line id="line-fog-cloud" x1="514" y1="74" x2="640" y2="44" stroke="#4a9eff" stroke-width="1.8" opacity="0.28" marker-end="url(#arr-cloud)"/>
+
+      <!-- ── Cloud node ── -->
+      <rect id="cloud-box" x="645" y="10" width="175" height="65" rx="9" fill="#0a1828" stroke="#4a9eff" stroke-width="1.5" opacity="0.45"/>
+      <text x="732" y="36" text-anchor="middle" fill="#4a9eff" font-size="10.5" font-family="monospace" font-weight="bold" letter-spacing="1">CLOUD</text>
+      <text x="732" y="52" text-anchor="middle" fill="#2a5070" font-size="8" font-family="monospace">cloud.fogai.internal</text>
+      <text x="732" y="65" text-anchor="middle" fill="#2a5070" font-size="7.5" font-family="monospace">Storage · Analytics</text>
+
+      <!-- ── Arrow: Fog → Action ── -->
+      <line id="line-fog-action" x1="514" y1="116" x2="640" y2="148" stroke="#00ff88" stroke-width="1.8" opacity="0.28" marker-end="url(#arr-action)"/>
+
+      <!-- ── Action node ── -->
+      <rect id="action-box" x="645" y="115" width="175" height="65" rx="9" fill="#0a1828" stroke="#00ff88" stroke-width="1.5" opacity="0.45"/>
+      <text id="action-txt" x="732" y="140" text-anchor="middle" fill="#00ff88" font-size="10.5" font-family="monospace" font-weight="bold">LOCAL ACTION</text>
+      <text id="action-detail" x="732" y="157" text-anchor="middle" fill="#2a5070" font-size="8" font-family="monospace">Monitoring...</text>
+      <text x="732" y="171" text-anchor="middle" fill="#1e4a30" font-size="7.5" font-family="monospace">Response &lt; 5 ms</text>
+
+      <!-- ── Animated packet: always to Fog ── -->
+      <circle fill="#00d4ff" r="5.5" filter="url(#glow-c)" opacity="0.95">
+        <animateMotion dur="1.6s" repeatCount="indefinite">
+          <mpath href="#mp-iot-fog"/>
+        </animateMotion>
+      </circle>
+      <!-- Packet: Fog → Cloud (toggled by JS) -->
+      <circle id="pkt-cloud" fill="#4a9eff" r="5" filter="url(#glow-c)" opacity="0">
+        <animateMotion dur="1.3s" repeatCount="indefinite">
+          <mpath href="#mp-fog-cloud"/>
+        </animateMotion>
+      </circle>
+      <!-- Packet: Fog → Action (toggled by JS) -->
+      <circle id="pkt-action" fill="#00ff88" r="5" filter="url(#glow-c)" opacity="0">
+        <animateMotion dur="1.3s" repeatCount="indefinite">
+          <mpath href="#mp-fog-action"/>
+        </animateMotion>
+      </circle>
+
+      <!-- Routing label -->
+      <text id="routing-label" x="413" y="180" text-anchor="middle" fill="#2a5070" font-size="8" font-family="monospace">Routing decision: —</text>
+    </svg>
+  </div>
+
+  <!-- Sensors -->
+  <div class="card sensors-card">
+    <div class="card-title">Live Sensor Readings</div>
+    <div class="sensor-grid">
+      <!-- Temperature SVG gauge -->
+      <div class="temp-gauge-wrap">
+        <div class="gauge-label">TEMPERATURE</div>
+        <svg id="temp-svg" viewBox="0 0 160 95">
+          <defs>
+            <linearGradient id="arc-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#00ff88"/>
+              <stop offset="50%"  stop-color="#ffb800"/>
+              <stop offset="100%" stop-color="#ff3366"/>
+            </linearGradient>
+          </defs>
+          <!-- Background arc (semicircle r=62, center=80,85) -->
+          <path d="M 18 85 A 62 62 0 0 1 142 85"
+                fill="none" stroke="#1a3050" stroke-width="10" stroke-linecap="round"/>
+          <!-- Fill arc -->
+          <path id="temp-arc" d="M 18 85 A 62 62 0 0 1 142 85"
+                fill="none" stroke="url(#arc-grad)" stroke-width="10"
+                stroke-linecap="round"
+                stroke-dasharray="0 195" style="transition:stroke-dasharray 0.5s ease"/>
+          <!-- Value -->
+          <text id="temp-val" x="80" y="70" text-anchor="middle"
+                fill="#d0e4ff" font-size="22" font-family="monospace" font-weight="bold">--</text>
+          <text x="80" y="86" text-anchor="middle" fill="#4a6a8a" font-size="9" font-family="monospace">°C</text>
+          <text x="18" y="95" text-anchor="middle" fill="#2a4060" font-size="8" font-family="monospace">20</text>
+          <text x="142" y="95" text-anchor="middle" fill="#2a4060" font-size="8" font-family="monospace">120</text>
+        </svg>
+      </div>
+
+      <!-- CPU Load -->
+      <div class="metric-card">
+        <div class="metric-name">CPU Load</div>
+        <div><span class="metric-value color-safe" id="cpu-val">--</span><span class="metric-unit">%</span></div>
+        <div class="metric-bar-track">
+          <div class="metric-bar-fill color-safe" id="cpu-bar" style="width:0%;background:var(--safe)"></div>
+        </div>
+      </div>
+
+      <!-- Vibration -->
+      <div class="metric-card">
+        <div class="metric-name">Vibration</div>
+        <div><span class="metric-value color-safe" id="vib-val">--</span><span class="metric-unit">g</span></div>
+        <div class="metric-bar-track">
+          <div class="metric-bar-fill" id="vib-bar" style="width:0%;background:var(--safe)"></div>
+        </div>
+      </div>
+
+      <!-- Network Latency -->
+      <div class="metric-card">
+        <div class="metric-name">Network</div>
+        <div><span class="metric-value" id="net-val" style="color:var(--safe)">--</span><span class="metric-unit" id="net-unit">ms</span></div>
+        <div class="net-status" id="net-status" style="color:var(--dim)">Checking...</div>
+      </div>
+
+      <!-- Power Draw -->
+      <div class="metric-card">
+        <div class="metric-name">Power Draw</div>
+        <div><span class="metric-value color-fog" id="pwr-val">--</span><span class="metric-unit">W</span></div>
+        <div style="font-size:0.58rem;color:var(--dim);margin-top:4px" id="anomaly-lbl">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Decision -->
+  <div class="card decision-card">
+    <div class="card-title">AI Decision Engine</div>
+    <div class="dest-box" id="dest-box">
+      <span class="dest-label" id="dest-label">—</span>
+    </div>
+
+    <div class="risk-row">
+      <span>RISK SCORE</span>
+      <span class="risk-value" id="risk-val">0.000</span>
+    </div>
+    <div class="risk-bar-track">
+      <div class="risk-bar-fill" id="risk-bar"></div>
+    </div>
+
+    <div style="font-size:0.58rem;color:var(--dim);margin-bottom:3px">TRIGGERED RULES</div>
+    <ul class="rules-list" id="rules-list"><li style="color:var(--dim)">— none —</li></ul>
+
+    <div class="conf-row">
+      <span style="color:var(--dim)">CONFIDENCE</span>
+      <span id="conf-val" style="color:var(--safe)">—</span>
+    </div>
+    <div class="conf-row">
+      <span style="color:var(--dim)">FOG LATENCY</span>
+      <span id="fog-lat" style="color:var(--fog)">— ms</span>
+    </div>
+    <div class="conf-row">
+      <span style="color:var(--dim)">EFFECTIVE LAT</span>
+      <span id="eff-lat" style="color:var(--safe)">— ms</span>
+    </div>
+
+    <div id="action-tag-wrap" style="text-align:center">
+      <span class="action-tag" id="action-tag" style="background:rgba(0,255,136,0.1);border:1px solid var(--safe);color:var(--safe)">LOG_ONLY</span>
+    </div>
+  </div>
+
+  <!-- Latency Chart -->
+  <div class="card latency-card">
+    <div class="card-title">Latency Comparison — Fog vs Cloud (ms)</div>
+    <canvas id="latency-chart"></canvas>
+  </div>
+
+  <!-- Right column: distribution + stats -->
+  <div class="right-col">
+    <div class="card dist-card">
+      <div class="card-title">Decision Distribution</div>
+      <canvas id="dist-chart"></canvas>
+    </div>
+
+    <div class="card">
+      <div class="card-title">System Statistics</div>
+      <div class="stat-grid">
+        <div class="stat-box">
+          <span class="stat-num color-fog"  id="st-fog">0</span>
+          <span class="stat-name">Fog Decisions</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num color-cloud" id="st-cloud">0</span>
+          <span class="stat-name">Cloud Syncs</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num color-warn"  id="st-alerts">0</span>
+          <span class="stat-name">Alerts Fired</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num color-crit"  id="st-shutdown">0</span>
+          <span class="stat-name">Shutdowns</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num color-safe"  id="st-fog-lat">—</span>
+          <span class="stat-name">Avg Fog ms</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num color-safe"  id="st-saved">—</span>
+          <span class="stat-name">ms Saved</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Event Log (full width) -->
+  <div class="card log-card">
+    <div class="card-title">Event Log</div>
+    <div class="event-log" id="event-log"></div>
+  </div>
+</div>
+
+<!-- ── About / Project Explanation ──────────────────── -->
+<div class="about-section">
+  <div class="about-card">
+
+    <!-- Title -->
+    <div class="about-title">FogAI — Low-Latency Intelligent IoT Architecture</div>
+    <div class="about-sub">Final Year Project &nbsp;·&nbsp; Industry 5.0 / Smart Manufacturing &nbsp;·&nbsp; Edge AI &amp; Fog Computing</div>
+
+    <!-- ── Section 1: Overview ── -->
+    <div style="border-top:1px solid var(--border);padding-top:18px;margin-bottom:18px">
+      <div class="sec-label">PROJECT OVERVIEW</div>
+      <p class="about-p">
+        FogAI is an intelligent IoT architecture designed for real-time industrial monitoring and control.
+        It solves a fundamental problem in modern smart manufacturing: traditional cloud-based systems
+        are too slow and too fragile for safety-critical decisions. By embedding a lightweight AI
+        decision engine directly at the <span class="highlight">fog layer</span> — between the sensors and
+        the cloud — FogAI makes intelligent decisions in under 5 milliseconds, even when the internet
+        is completely unavailable.
+      </p>
+      <p class="about-p" style="margin-top:8px">
+        This project simulates a CNC industrial machine (CNC-MACHINE-07) continuously monitored by
+        five sensor parameters. A fog node (FOG-NODE-001) processes every reading locally using a
+        two-stage AI engine — hard safety rules and a continuous weighted risk score — and decides
+        in real time whether to act locally, sync to the cloud, or both. The live dashboard you see
+        above is the actual system running and making decisions cycle by cycle.
+      </p>
+    </div>
+
+    <!-- ── Section 2: Three columns ── -->
+    <div class="about-grid" style="margin-bottom:18px">
+      <div class="about-col">
+        <h3>The Problem We Solve</h3>
+        <p>Cloud-based IoT systems route every sensor reading to a remote server before acting. This creates:</p>
+        <br>
+        <ul>
+          <li><strong style="color:var(--crit)">100–300 ms latency</strong> on every decision cycle</li>
+          <li>Complete system failure when network drops</li>
+          <li>High bandwidth usage for routine data</li>
+          <li>No local intelligence — the machine cannot protect itself</li>
+        </ul>
+        <br>
+        <p>In a CNC machine running at high speed, a 200 ms response to an overheating event is the difference between a safe stop and a fire. Traditional architectures cannot meet this requirement.</p>
+      </div>
+
+      <div class="about-col">
+        <h3>Our Fog AI Solution</h3>
+        <p>We place a <span class="highlight">Fog Node</span> — a compute unit — directly beside the equipment. It runs our AI engine continuously:</p>
+        <br>
+        <ul>
+          <li>Reads 5 sensor streams every 750 ms</li>
+          <li>Runs feature extraction and normalisation</li>
+          <li>Evaluates 5 hard safety rules (R1–R5)</li>
+          <li>Computes a weighted risk score (0.0–1.0)</li>
+          <li>Triggers local actions in <strong style="color:var(--safe)">&lt; 5 ms</strong></li>
+          <li>Forwards only necessary data to cloud</li>
+          <li>Operates <strong style="color:var(--fog)">fully offline</strong> during network failure</li>
+          <li>Logs all decisions locally + to cloud</li>
+        </ul>
+        <br>
+        <p>The cloud receives structured telemetry for long-term trend analysis and storage — but is never in the critical decision path.</p>
+      </div>
+
+      <div class="about-col">
+        <h3>AI Decision Engine</h3>
+        <p style="margin-bottom:8px">Two-layer intelligence model:</p>
+        <p style="color:var(--fog);font-size:0.6rem;margin-bottom:4px">LAYER 1 — HARD SAFETY RULES (highest priority)</p>
+        <table class="rule-table" style="margin-bottom:10px">
+          <tr><th>Rule</th><th>Condition</th><th>Action</th></tr>
+          <tr><td class="color-crit">R1</td><td>Temp ≥ 90°C</td><td>SHUTDOWN</td></tr>
+          <tr><td class="color-warn">R2</td><td>Temp ≥ 75°C</td><td>ALERT</td></tr>
+          <tr><td class="color-warn">R3</td><td>Network down</td><td>Fog-only mode</td></tr>
+          <tr><td class="color-crit">R4</td><td>Vibration ≥ 4g</td><td>SHUTDOWN</td></tr>
+          <tr><td class="color-warn">R5</td><td>CPU ≥ 95%</td><td>Throttle</td></tr>
+        </table>
+        <p style="color:var(--fog);font-size:0.6rem;margin-bottom:4px">LAYER 2 — WEIGHTED RISK SCORE</p>
+        <table class="rule-table">
+          <tr><th>Score</th><th>Routing</th></tr>
+          <tr><td style="color:var(--dim)">&lt; 0.35</td><td>Cloud sync (low risk)</td></tr>
+          <tr><td style="color:var(--warn)">0.35–0.65</td><td>Fog only (medium)</td></tr>
+          <tr><td style="color:var(--crit)">&gt; 0.65</td><td>Alert — Fog + Cloud</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── Section 3: What we built ── -->
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:18px">
+      <div class="sec-label">WHAT WE BUILT — SYSTEM COMPONENTS</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px">
+        <div class="comp-card">
+          <div class="comp-title" style="color:var(--fog)">sensor.py</div>
+          <div class="comp-body">IoT sensor simulator. Generates realistic temperature, CPU load, vibration, humidity, and network readings with Gaussian noise, gradual drift, and 7 scripted anomaly events injected at precise cycles.</div>
+        </div>
+        <div class="comp-card">
+          <div class="comp-title" style="color:var(--both)">ai_engine.py</div>
+          <div class="comp-body">The core intelligence. Feature extraction → rule evaluation → weighted risk scoring → routing decision. Outputs destination (FOG/CLOUD/BOTH), action, risk score, and confidence. Designed for &lt;1 MB RAM footprint.</div>
+        </div>
+        <div class="comp-card">
+          <div class="comp-title" style="color:var(--safe)">fog_node.py</div>
+          <div class="comp-body">Orchestrates one full sensor cycle: receive reading → AI decision → execute local action (shutdown, alert, throttle) → optionally forward to cloud. Writes structured JSONL logs locally.</div>
+        </div>
+        <div class="comp-card">
+          <div class="comp-title" style="color:var(--cloud)">web_app.py</div>
+          <div class="comp-body">Flask server streaming live simulation data to this dashboard via Server-Sent Events (SSE). Every 750 ms a real decision is computed and pushed to the browser in real time — no page refresh needed.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 4: Simulation phases ── -->
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:18px">
+      <div class="sec-label">SIMULATION WALKTHROUGH — 60 CYCLES</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:10px;font-size:0.62rem">
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--safe)">
+          <div style="color:var(--safe);font-weight:bold;margin-bottom:6px">Phase 1 · Cycles 1–21 · Normal Operation</div>
+          <div style="color:#6a8aaa;line-height:1.7">Machine runs normally. Risk scores stay below 0.45. Low-risk readings are forwarded to the cloud for storage. Fog routes based on current network quality. You can observe the routing switching between FOG and CLOUD in real time on the architecture diagram.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--warn)">
+          <div style="color:var(--warn);font-weight:bold;margin-bottom:6px">Phase 2 · Cycles 22–32 · Network Failure</div>
+          <div style="color:#6a8aaa;line-height:1.7">Network starts degrading at cycle 22. By cycle 27, latency exceeds 9999 ms — network is offline. Rule R3 fires. The fog node switches to fully autonomous mode, processing and acting without any cloud connectivity. The cloud box in the diagram dims to show it is unreachable.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--crit)">
+          <div style="color:var(--crit);font-weight:bold;margin-bottom:6px">Phase 3 · Cycles 33–57 · Crisis Event</div>
+          <div style="color:#6a8aaa;line-height:1.7">Overheating begins at cycle 33 — temperature climbs past 90°C, triggering Rule R1 (EMERGENCY SHUTDOWN) with response in under 4 ms. At cycle 38, a vibration shock triggers Rule R4. The machine is offline and network is also down — fog handles everything alone. This is the core value of the architecture.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:12px;border-left:3px solid var(--fog)">
+          <div style="color:var(--fog);font-weight:bold;margin-bottom:6px">Phase 4 · Cycles 58–60 · Recovery</div>
+          <div style="color:#6a8aaa;line-height:1.7">The fault is cleared at cycle 58. Temperature drops, network recovers. The system normalises automatically — no manual reset needed. Cloud sync resumes for long-term trend analytics. The fog node transitions back to normal routing based on current risk scores.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 5: Key results ── -->
+    <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:18px">
+      <div class="sec-label">KEY RESULTS &amp; ACHIEVEMENTS</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:12px">
+        <div class="result-card">
+          <div class="result-num" style="color:var(--safe)">~3 ms</div>
+          <div class="result-label">Average fog decision latency</div>
+          <div class="result-desc">vs. 120–300 ms for cloud-only systems. Critical safety events are handled 40–100× faster.</div>
+        </div>
+        <div class="result-card">
+          <div class="result-num" style="color:var(--fog)">~75%</div>
+          <div class="result-label">Decisions made at fog layer</div>
+          <div class="result-desc">Only truly necessary data is forwarded to the cloud, reducing bandwidth and cloud costs significantly.</div>
+        </div>
+        <div class="result-card">
+          <div class="result-num" style="color:var(--warn)">100%</div>
+          <div class="result-label">Offline resilience</div>
+          <div class="result-desc">During full network outage (cycles 27–57), all safety rules fire correctly with zero cloud dependency.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Section 6: Tech stack ── -->
+    <div style="border-top:1px solid var(--border);padding-top:14px">
+      <div class="sec-label">TECHNOLOGY STACK</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">
+        <span class="tech-tag">Python 3.14</span>
+        <span class="tech-tag">Flask 3.1 (SSE)</span>
+        <span class="tech-tag">Chart.js 4.4</span>
+        <span class="tech-tag">SVG Animation</span>
+        <span class="tech-tag">Rule-Based AI</span>
+        <span class="tech-tag">Weighted Risk Scoring</span>
+        <span class="tech-tag">Fog Computing</span>
+        <span class="tech-tag">Edge Intelligence</span>
+        <span class="tech-tag">JSONL Telemetry Logging</span>
+        <span class="tech-tag">Server-Sent Events</span>
+        <span class="tech-tag">Industry 5.0</span>
+        <span class="tech-tag">Real-Time Dashboard</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Footer ──────────────────────────────────────── -->
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <span class="footer-logo">FOGAI</span>
+      <span class="footer-tagline">Low-Latency Intelligent IoT Architecture</span>
+    </div>
+    <div class="footer-center">
+      <span class="footer-field">Final Year Project &nbsp;·&nbsp; B.Tech Computer Science / Information Technology</span>
+      <span class="footer-field">Domain: IoT &nbsp;·&nbsp; Edge Computing &nbsp;·&nbsp; Artificial Intelligence &nbsp;·&nbsp; Industry 5.0</span>
+    </div>
+    <div class="footer-right">
+      <span class="footer-dev-label">Developed by</span>
+      <span class="footer-dev-name">Adwaith</span>
+    </div>
+  </div>
+</footer>
+
+<!-- no popup overlay -->
+
+<!-- ── JavaScript ─────────────────────────────────── -->
+<script>
+// ── Clock ────────────────────────────────────────────
+function tickClock() {
+  const now = new Date();
+  document.getElementById('live-clock').textContent =
+    now.toTimeString().slice(0,8);
+}
+setInterval(tickClock, 1000); tickClock();
+
+// ── Chart.js setup ───────────────────────────────────
+Chart.defaults.color = '#4a6a8a';
+Chart.defaults.borderColor = '#1a3050';
+Chart.defaults.font.family = "'Share Tech Mono', monospace";
+
+const latencyCtx = document.getElementById('latency-chart').getContext('2d');
+const latencyChart = new Chart(latencyCtx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: 'Fog Latency',
+        data: [],
+        borderColor: '#00d4ff',
+        backgroundColor: 'rgba(0,212,255,0.05)',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: '#00d4ff',
+        tension: 0.3,
+        fill: true,
+      },
+      {
+        label: 'Cloud Latency',
+        data: [],
+        borderColor: '#4a9eff',
+        borderDash: [6,4],
+        borderWidth: 1.5,
+        pointRadius: 2,
+        pointBackgroundColor: '#4a9eff',
+        tension: 0.3,
+        fill: false,
+      },
+      {
+        label: 'Effective',
+        data: [],
+        borderColor: '#00ff88',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: false,
+      },
+    ],
+  },
+  options: {
+    responsive: true,
+    animation: { duration: 200 },
+    plugins: { legend: { labels: { boxWidth: 12, font: { size: 10 } } } },
+    scales: {
+      x: { ticks: { font: { size: 9 } }, grid: { color: '#0f2030' } },
+      y: {
+        min: 0, suggestedMax: 350,
+        ticks: { font: { size: 9 },
+          callback: v => v >= 500 ? 'OFF' : v + 'ms' },
+        grid: { color: '#0f2030' },
+      },
+    },
+  },
+});
+
+const distCtx = document.getElementById('dist-chart').getContext('2d');
+const distChart = new Chart(distCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['FOG', 'CLOUD', 'BOTH'],
+    datasets: [{
+      data: [0, 0, 0],
+      backgroundColor: ['rgba(0,212,255,0.7)','rgba(74,158,255,0.7)','rgba(204,68,255,0.7)'],
+      borderColor:      ['#00d4ff','#4a9eff','#cc44ff'],
+      borderWidth: 1,
+    }],
+  },
+  options: {
+    responsive: true,
+    cutout: '60%',
+    animation: { duration: 300 },
+    plugins: {
+      legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 9 } } },
+    },
+  },
+});
+
+// ── SSE state ────────────────────────────────────────
+let es = null;
+let totalCycles = 60;
+let distCounts = { FOG: 0, CLOUD: 0, BOTH: 0 };
+const MAX_POINTS = 30;
+
+// ── Start / Restart ──────────────────────────────────
+function restartSim() {
+  if (es) { es.close(); es = null; }
+  resetUI();
+  setTimeout(startStream, 300);
+}
+
+function resetUI() {
+  // Charts
+  distCounts = { FOG:0, CLOUD:0, BOTH:0 };
+  latencyChart.data.labels = [];
+  latencyChart.data.datasets.forEach(d => d.data = []);
+  latencyChart.update();
+  distChart.data.datasets[0].data = [0,0,0];
+  distChart.update();
+
+  // Header / progress
+  document.getElementById('event-log').innerHTML = '';
+  document.getElementById('cyc-cur').textContent  = '0';
+  document.getElementById('cyc-fill').style.width = '0%';
+  document.getElementById('cyc-pct').textContent  = '0%';
+  dec_severity = 'NORMAL';
+  setStatus('CONNECTING...', '');
+
+  // Sensor displays
+  document.getElementById('temp-val').textContent = '--';
+  document.getElementById('temp-val').style.fill  = '#d0e4ff';
+  document.getElementById('temp-arc').setAttribute('stroke-dasharray', '0 195');
+  document.getElementById('cpu-val').textContent  = '--';
+  document.getElementById('cpu-bar').style.width  = '0%';
+  document.getElementById('vib-val').textContent  = '--';
+  document.getElementById('vib-bar').style.width  = '0%';
+  document.getElementById('net-val').textContent  = '--';
+  document.getElementById('net-val').style.color  = 'var(--safe)';
+  document.getElementById('net-unit').textContent = 'ms';
+  document.getElementById('net-status').textContent = 'Checking...';
+  document.getElementById('pwr-val').textContent  = '--';
+  document.getElementById('anomaly-lbl').textContent = '—';
+  document.getElementById('anomaly-lbl').style.color = 'var(--dim)';
+
+  // Decision panel
+  const destBox = document.getElementById('dest-box');
+  destBox.className = 'dest-box';
+  document.getElementById('dest-label').textContent = '—';
+  document.getElementById('risk-val').textContent = '0.000';
+  document.getElementById('risk-val').style.color = 'var(--safe)';
+  document.getElementById('risk-bar').style.width = '0%';
+  document.getElementById('rules-list').innerHTML = '<li style="color:var(--dim)">— none —</li>';
+  document.getElementById('conf-val').textContent = '—';
+  document.getElementById('fog-lat').textContent  = '— ms';
+  document.getElementById('eff-lat').textContent  = '— ms';
+  document.getElementById('eff-lat').style.color  = 'var(--safe)';
+  const tag = document.getElementById('action-tag');
+  tag.textContent = 'LOG_ONLY';
+  tag.style.background  = 'rgba(255,255,255,0.04)';
+  tag.style.borderColor = 'var(--dim)';
+  tag.style.color       = 'var(--dim)';
+
+  // Stats
+  ['st-fog','st-cloud','st-alerts','st-shutdown'].forEach(id =>
+    document.getElementById(id).textContent = '0');
+  ['st-fog-lat','st-saved'].forEach(id =>
+    document.getElementById(id).textContent = '—');
+
+  // SVG architecture diagram — reset to idle state
+  document.getElementById('pkt-cloud').setAttribute('opacity', '0');
+  document.getElementById('pkt-action').setAttribute('opacity', '0');
+  document.getElementById('line-fog-cloud').setAttribute('opacity', '0.18');
+  document.getElementById('line-fog-action').setAttribute('opacity', '0.18');
+  document.getElementById('cloud-box').setAttribute('opacity', '0.45');
+  document.getElementById('cloud-box').setAttribute('stroke', '#4a9eff');
+  document.getElementById('action-box').setAttribute('opacity', '0.45');
+  document.getElementById('action-box').setAttribute('stroke', '#00ff88');
+  document.getElementById('action-txt').setAttribute('fill', '#00ff88');
+  document.getElementById('action-txt').textContent = 'LOCAL ACTION';
+  document.getElementById('action-detail').textContent = 'Monitoring...';
+  document.getElementById('action-detail').setAttribute('fill', '#2a5070');
+  document.getElementById('fog-box').setAttribute('stroke', '#00d4ff');
+  document.getElementById('fog-action-txt').textContent = '— waiting —';
+  document.getElementById('fog-action-txt').setAttribute('fill', '#00d4ff');
+  document.getElementById('routing-label').textContent = 'Routing: —';
+  document.getElementById('routing-label').setAttribute('fill', '#2a5070');
+}
+
+function startStream() {
+  es = new EventSource('/stream');
+  es.onmessage = onMessage;
+  es.onerror   = () => setStatus('RECONNECTING...', '');
+}
+
+// ── Message handler ──────────────────────────────────
+function onMessage(evt) {
+  const d = JSON.parse(evt.data);
+
+  if (d.type === 'init') {
+    totalCycles = d.total_cycles;
+    document.getElementById('cyc-tot').textContent   = d.total_cycles;
+    document.getElementById('hdr-node').textContent  = d.node_id;
+    document.getElementById('hdr-machine').textContent = d.machine_id;
+    setStatus('ONLINE', 'safe');
+    logEvent(0, 'System', `${d.node_id} connected · machine ${d.machine_id}`, 'safe');
+    return;
+  }
+
+  if (d.type === 'complete') {
+    showCompletion(d.summary);
+    es.close(); es = null;
+    return;
+  }
+
+  const r = d.reading;
+  const dec = d.decision;
+  const stats = d.stats || {};
+
+  updateCycle(dec.cycle, totalCycles);
+  updateSensors(r);
+  updateDecision(dec);
+  updateCharts(dec);
+  updateStats(stats);
+  updateSvg(r, dec);
+  addLogEntry(r, dec);
+}
+
+// ── Cycle progress ───────────────────────────────────
+function updateCycle(c, total) {
+  document.getElementById('cyc-cur').textContent = c;
+  const pct = Math.round(100 * c / total);
+  document.getElementById('cyc-fill').style.width = pct + '%';
+  document.getElementById('cyc-pct').textContent = pct + '%';
+}
+
+// ── Sensor updates ───────────────────────────────────
+function updateSensors(r) {
+  const temp = r.temperature_C;
+  const cpu  = r.cpu_load_pct;
+  const vib  = r.vibration_g;
+  const net  = r.network_latency_ms;
+
+  // Temperature arc gauge (arc length = 195 for 180° semicircle r=62)
+  const tempPct = Math.max(0, Math.min(1, (temp - 20) / 100));
+  const arcLen  = tempPct * 195;
+  const tempArc = document.getElementById('temp-arc');
+  tempArc.setAttribute('stroke-dasharray', `${arcLen} 195`);
+  const tempColor = temp >= 90 ? '#ff3366' : temp >= 75 ? '#ffb800' : '#00ff88';
+  document.getElementById('temp-val').textContent = Math.round(temp);
+  document.getElementById('temp-val').style.fill   = tempColor;
+
+  // CPU
+  setMetric('cpu', cpu, cpu + '%', cpu >= 95 ? 'var(--crit)' : cpu >= 80 ? 'var(--warn)' : 'var(--safe)', cpu);
+
+  // Vibration (max display 5g)
+  setMetric('vib', vib, vib.toFixed(2), vib >= 4 ? 'var(--crit)' : vib >= 2.5 ? 'var(--warn)' : 'var(--safe)', (vib / 5) * 100);
+
+  // Network
+  const netEl  = document.getElementById('net-val');
+  const netSts = document.getElementById('net-status');
+  const netUnit = document.getElementById('net-unit');
+  if (net >= 9999) {
+    netEl.textContent  = 'OFFLINE';
+    netEl.style.color  = 'var(--crit)';
+    netUnit.textContent = '';
+    netSts.textContent = 'Fog operating autonomously';
+    netSts.style.color = 'var(--crit)';
+  } else {
+    netEl.textContent  = Math.round(net);
+    netEl.style.color  = net > 150 ? 'var(--warn)' : 'var(--safe)';
+    netUnit.textContent = 'ms';
+    netSts.textContent = net > 150 ? 'Network degraded' : 'Network healthy';
+    netSts.style.color = net > 150 ? 'var(--warn)' : 'var(--dim)';
+  }
+
+  // Power
+  document.getElementById('pwr-val').textContent = Math.round(r.power_draw_W);
+
+  // Anomaly label
+  const aLbl = document.getElementById('anomaly-lbl');
+  if (r.anomaly_type) {
+    aLbl.textContent = '⚠ ' + r.anomaly_type.replace(/_/g,' ');
+    aLbl.style.color = r.anomaly_type.includes('CRITICAL') || r.anomaly_type.includes('SHUTDOWN')
+      ? 'var(--crit)' : 'var(--warn)';
+  } else {
+    aLbl.textContent = '—';
+    aLbl.style.color = 'var(--dim)';
+  }
+
+  // Header status badge
+  const sev = dec_severity;
+  if (sev === 'CRITICAL') setStatus('CRITICAL', 'crit');
+  else if (sev === 'WARNING') setStatus('WARNING', 'warn');
+  else setStatus('ONLINE', 'safe');
+}
+
+let dec_severity = 'NORMAL'; // shared between sensor & decision updates
+
+// ── Decision updates ─────────────────────────────────
+function updateDecision(dec) {
+  dec_severity = dec.severity;
+
+  // Destination box
+  const box   = document.getElementById('dest-box');
+  const label = document.getElementById('dest-label');
+  box.className   = 'dest-box';
+  label.textContent = dec.destination;
+  if (dec.destination === 'CLOUD') box.classList.add('dest-cloud');
+  if (dec.destination === 'BOTH')  box.classList.add('dest-both');
+  if (dec.severity === 'CRITICAL') box.classList.add('dest-crit');
+
+  // Risk
+  const risk = dec.risk_score;
+  document.getElementById('risk-val').textContent = risk.toFixed(3);
+  document.getElementById('risk-val').style.color =
+    risk >= 0.7 ? 'var(--crit)' : risk >= 0.4 ? 'var(--warn)' : 'var(--safe)';
+  document.getElementById('risk-bar').style.width = (risk * 100) + '%';
+
+  // Confidence
+  document.getElementById('conf-val').textContent = (dec.confidence * 100).toFixed(1) + '%';
+  document.getElementById('fog-lat').textContent   = dec.fog_latency_ms.toFixed(2) + ' ms';
+  const effLat = dec.effective_latency_ms;
+  document.getElementById('eff-lat').textContent = effLat.toFixed(2) + ' ms';
+  document.getElementById('eff-lat').style.color =
+    effLat < 20 ? 'var(--safe)' : effLat < 100 ? 'var(--warn)' : 'var(--crit)';
+
+  // Rules
+  const rList = document.getElementById('rules-list');
+  if (dec.triggered_rules && dec.triggered_rules.length) {
+    rList.innerHTML = dec.triggered_rules.map(r => {
+      const cls = r.startsWith('R1') || r.startsWith('R4') ? 'crit' : '';
+      return `<li class="${cls}">${r}</li>`;
+    }).join('');
+  } else {
+    rList.innerHTML = '<li style="color:var(--dim)">— none —</li>';
+  }
+
+  // Action tag
+  const tag = document.getElementById('action-tag');
+  const actionColors = {
+    'EMERGENCY_SHUTDOWN': ['rgba(255,51,102,0.15)','var(--crit)','var(--crit)'],
+    'ALERT':              ['rgba(255,184,0,0.12)','var(--warn)','var(--warn)'],
+    'THROTTLE_MACHINE':   ['rgba(255,184,0,0.08)','var(--warn)','var(--warn)'],
+    'CLOUD_SYNC':         ['rgba(74,158,255,0.1)','var(--cloud)','var(--cloud)'],
+    'LOG_ONLY':           ['rgba(255,255,255,0.04)','var(--dim)','var(--dim)'],
+    'NONE':               ['rgba(255,255,255,0.04)','var(--dim)','var(--dim)'],
+  };
+  const ac = actionColors[dec.action] || actionColors['NONE'];
+  tag.textContent = dec.action;
+  tag.style.background   = ac[0];
+  tag.style.borderColor  = ac[1];
+  tag.style.color        = ac[2];
+}
+
+// ── Chart updates ────────────────────────────────────
+function updateCharts(dec) {
+  const label = `#${dec.cycle}`;
+
+  // Clamp cloud latency for display
+  const cloudDisp = dec.cloud_latency_ms >= 9999 ? 340 : dec.cloud_latency_ms;
+
+  if (latencyChart.data.labels.length >= MAX_POINTS) {
+    latencyChart.data.labels.shift();
+    latencyChart.data.datasets.forEach(d => d.data.shift());
+  }
+  latencyChart.data.labels.push(label);
+  latencyChart.data.datasets[0].data.push(dec.fog_latency_ms);
+  latencyChart.data.datasets[1].data.push(cloudDisp);
+  latencyChart.data.datasets[2].data.push(dec.effective_latency_ms);
+  latencyChart.update();
+
+  // Distribution doughnut
+  const dest = dec.destination;
+  if (dest === 'FOG')   distCounts.FOG++;
+  else if (dest === 'CLOUD') distCounts.CLOUD++;
+  else                       distCounts.BOTH++;
+  distChart.data.datasets[0].data = [distCounts.FOG, distCounts.CLOUD, distCounts.BOTH];
+  distChart.update();
+}
+
+// ── Stats ────────────────────────────────────────────
+function updateStats(s) {
+  if (!s || !s.total_decisions) return;
+  document.getElementById('st-fog').textContent      = s.fog_decisions;
+  document.getElementById('st-cloud').textContent    = s.cloud_decisions;
+  document.getElementById('st-alerts').textContent   = s.alerts_fired;
+  document.getElementById('st-shutdown').textContent = s.emergency_shutdowns;
+  document.getElementById('st-fog-lat').textContent  = s.avg_fog_latency_ms?.toFixed(1) || '—';
+  document.getElementById('st-saved').textContent    = s.avg_latency_saved_ms?.toFixed(0) || '—';
+}
+
+// ── SVG architecture animation ───────────────────────
+function updateSvg(r, dec) {
+  const toCloud  = dec.destination === 'CLOUD' || dec.destination === 'BOTH';
+  const toAction = dec.destination === 'FOG'   || dec.destination === 'BOTH';
+  const offline  = r.network_latency_ms >= 9999;
+  const isShutdown = dec.action === 'EMERGENCY_SHUTDOWN';
+  const isAlert    = dec.action === 'ALERT';
+
+  // Animated packets
+  document.getElementById('pkt-cloud').setAttribute('opacity', toCloud && !offline ? '0.9' : '0');
+  document.getElementById('pkt-action').setAttribute('opacity', toAction ? '0.9' : '0');
+
+  // Line opacities
+  document.getElementById('line-fog-cloud').setAttribute('opacity', toCloud && !offline ? '0.75' : '0.18');
+  document.getElementById('line-fog-action').setAttribute('opacity', toAction ? '0.75' : '0.18');
+
+  // Cloud box
+  const cloudBox = document.getElementById('cloud-box');
+  cloudBox.setAttribute('opacity', offline ? '0.2' : toCloud ? '0.95' : '0.5');
+  cloudBox.setAttribute('stroke', offline ? '#ff3366' : '#4a9eff');
+
+  // Action box & text
+  const actionBox  = document.getElementById('action-box');
+  const actionTxt  = document.getElementById('action-txt');
+  const actionDet  = document.getElementById('action-detail');
+  let actionColor  = '#00ff88';
+  let actionName   = 'LOCAL ACTION';
+  let actionSubtxt = 'Monitoring...';
+
+  if (isShutdown) {
+    actionColor = '#ff3366';
+    actionName  = '!! SHUTDOWN !!';
+    actionSubtxt = 'Machine halted';
+  } else if (isAlert) {
+    actionColor  = '#ffb800';
+    actionName   = '⚠  ALERT';
+    actionSubtxt = 'Notification sent';
+  } else if (dec.action === 'THROTTLE_MACHINE') {
+    actionColor  = '#ffb800';
+    actionName   = 'THROTTLE';
+    actionSubtxt = 'CPU load reduced';
+  }
+
+  actionBox.setAttribute('stroke', actionColor);
+  actionBox.setAttribute('opacity', toAction ? '0.95' : '0.35');
+  actionTxt.setAttribute('fill', actionColor);
+  actionTxt.textContent = actionName;
+  actionDet.textContent = actionSubtxt;
+  actionDet.setAttribute('fill', actionColor === '#00ff88' ? '#2a5070' : actionColor);
+
+  // Fog box glow
+  const fogBox = document.getElementById('fog-box');
+  const fogGlowColor = dec.severity === 'CRITICAL' ? '#ff3366' : dec.severity === 'WARNING' ? '#ffb800' : '#00d4ff';
+  fogBox.setAttribute('stroke', fogGlowColor);
+
+  // Fog action text
+  document.getElementById('fog-action-txt').textContent =
+    `${dec.action}  ·  risk=${dec.risk_score.toFixed(2)}`;
+  document.getElementById('fog-action-txt').setAttribute('fill', fogGlowColor);
+
+  // Routing label
+  const routeLbl = `Routing: ${dec.destination}  ·  ${dec.action}  ·  lat=${dec.effective_latency_ms.toFixed(1)}ms`;
+  const rEl = document.getElementById('routing-label');
+  rEl.textContent = routeLbl;
+  rEl.setAttribute('fill', fogGlowColor === '#00d4ff' ? '#3a5a7a' : fogGlowColor);
+}
+
+// ── Event log ─────────────────────────────────────────
+function addLogEntry(r, dec) {
+  const log = document.getElementById('event-log');
+  const now = new Date().toTimeString().slice(0,8);
+
+  let msg, cls;
+  const action = dec.action;
+  const dest   = dec.destination;
+
+  if (action === 'EMERGENCY_SHUTDOWN') {
+    msg = `EMERGENCY SHUTDOWN — temp=${r.temperature_C.toFixed(1)}°C vibr=${r.vibration_g.toFixed(2)}g — fog response ${dec.fog_latency_ms.toFixed(1)}ms`;
+    cls = 'crit';
+  } else if (action === 'ALERT') {
+    msg = `ALERT triggered — temp=${r.temperature_C.toFixed(1)}°C risk=${dec.risk_score.toFixed(2)} — ${dest}`;
+    cls = 'warn';
+  } else if (r.network_latency_ms >= 9999) {
+    msg = `Network OFFLINE — fog operating autonomously — ${dest} · risk=${dec.risk_score.toFixed(2)}`;
+    cls = 'warn';
+  } else if (dest === 'CLOUD') {
+    msg = `Cloud sync — temp=${r.temperature_C.toFixed(1)}°C cpu=${r.cpu_load_pct.toFixed(0)}% — lat=${dec.cloud_latency_ms.toFixed(0)}ms`;
+    cls = 'cloud';
+  } else {
+    msg = `Fog processed — temp=${r.temperature_C.toFixed(1)}°C risk=${dec.risk_score.toFixed(2)} — lat=${dec.fog_latency_ms.toFixed(1)}ms`;
+    cls = dec.risk_score > 0.5 ? 'warn' : 'dim';
+  }
+
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-cyc">#${String(dec.cycle).padStart(2,'0')}</span>
+    <span class="log-time">${now}</span>
+    <span class="log-msg ${cls}">${msg}</span>`;
+  log.prepend(entry);
+
+  // Keep max 60 entries
+  while (log.children.length > 60) log.lastChild.remove();
+}
+
+// ── Completion — inline summary in log ───────────────
+function showCompletion(summary) {
+  setStatus('COMPLETE', 'safe');
+  const ai  = summary?.ai_engine   || {};
+  const cld = summary?.cloud_service || {};
+
+  const banner = document.createElement('div');
+  banner.className = 'summary-banner';
+  banner.innerHTML = `
+    <div class="sb-title">── SIMULATION COMPLETE ── click RESTART to run again ──</div>
+    <div class="sb-grid">
+      <div class="sb-row"><span class="sb-label">Fog decisions</span>
+        <span class="sb-val color-fog">${ai.fog_decisions || 0} (${ai.fog_pct || 0}%)</span></div>
+      <div class="sb-row"><span class="sb-label">Cloud syncs</span>
+        <span class="sb-val color-cloud">${ai.cloud_decisions || 0}</span></div>
+      <div class="sb-row"><span class="sb-label">Alerts fired</span>
+        <span class="sb-val color-warn">${ai.alerts_fired || 0}</span></div>
+      <div class="sb-row"><span class="sb-label">Avg fog latency</span>
+        <span class="sb-val color-safe">${(ai.avg_fog_latency_ms || 0).toFixed(2)} ms</span></div>
+      <div class="sb-row"><span class="sb-label">Latency saved</span>
+        <span class="sb-val color-safe">${(ai.avg_latency_saved_ms || 0).toFixed(1)} ms</span></div>
+      <div class="sb-row"><span class="sb-label">Shutdowns</span>
+        <span class="sb-val color-crit">${ai.emergency_shutdowns || 0}</span></div>
+    </div>`;
+
+  const log = document.getElementById('event-log');
+  log.prepend(banner);
+  log.scrollTop = 0;
+}
+
+// ── Helpers ───────────────────────────────────────────
+function setStatus(text, cls) {
+  const badge = document.getElementById('status-badge');
+  badge.textContent  = text;
+  badge.className    = 'status-badge' + (cls ? ' ' + cls : '');
+}
+
+function logEvent(cycle, source, msg, cls) {
+  const log = document.getElementById('event-log');
+  const now = new Date().toTimeString().slice(0,8);
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-cyc">#${String(cycle).padStart(2,'0')}</span>
+    <span class="log-time">${now}</span>
+    <span class="log-msg ${cls}">[${source}] ${msg}</span>`;
+  log.prepend(entry);
+}
+
+function setMetric(id, numVal, dispVal, color, pct) {
+  document.getElementById(id + '-val').textContent = dispVal;
+  document.getElementById(id + '-val').style.color = color;
+  document.getElementById(id + '-bar').style.width       = Math.min(100, pct) + '%';
+  document.getElementById(id + '-bar').style.background  = color;
+}
+
+// ── Boot ──────────────────────────────────────────────
+startStream();
+</script>
+</body>
+</html>
