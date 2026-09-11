@@ -108,12 +108,13 @@ FogAi/
 
 ### Installation
 
-
+```bash
 pip install rich numpy colorama
 
 python main.py
 
 run.bat
+```
 
 Command Options
 Option	Description
