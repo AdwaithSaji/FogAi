@@ -47,38 +47,44 @@ IoT Sensors
 - Structured logs and decision reports
 
 ## Decision Rules
-Rule	Condition	Action
-R1	Temperature ≥ 90°C	Emergency Shutdown
-R2	Temperature ≥ 75°C	Alert
-R3	Network Offline	Fog-only Operation
-R4	Vibration ≥ 4.0 g	Emergency Shutdown
-R5	CPU ≥ 95%	Throttle Machine
-Simulation
+
+| Rule | Condition | Action |
+|---|---|---|
+| R1 | Temperature ≥ 90°C | Emergency Shutdown |
+| R2 | Temperature ≥ 75°C | Alert |
+| R3 | Network Offline | Fog-only Operation |
+| R4 | Vibration ≥ 4.0 g | Emergency Shutdown |
+| R5 | CPU ≥ 95% | Throttle Machine |
+
+## Simulation
 
 The system simulates 60 sensor cycles representing different industrial conditions:
 
-Normal operation
-Temperature spike
-Network degradation
-Network outage
-Machine overheating
-Critical vibration event
-Peak-risk conditions
-System recovery
-Results
+- Normal operation
+- Temperature spike
+- Network degradation
+- Network outage
+- Machine overheating
+- Critical vibration event
+- Peak-risk conditions
+- System recovery
+  
+## Results
 
 A typical simulation demonstrates:
 
-Metric	Result
-Fog-layer decisions	~75%
-Average fog latency	~3 ms
-Average cloud latency	~120 ms
-Latency saved	~66 ms/cycle
-Emergency shutdowns	25
-Network-down operation	Autonomous
+| Metric | Result |
+|---|---:|
+| Fog-layer decisions | ~75% |
+| Average fog latency | ~3 ms |
+| Average cloud latency | ~120 ms |
+| Latency saved | ~66 ms/cycle |
+| Emergency shutdowns | 25 |
+| Network-down operation | Autonomous |
 
+## Project Structure
 
-Project Structure
+```text
 FogAi/
 ├── ai_engine.py
 ├── cloud_stub.py
@@ -89,14 +95,24 @@ FogAi/
 ├── paper/
 ├── templates/
 └── README.md
+```
 
-How to Run
-Requirements
-Python 3.8+
-NumPy
-Rich
-Colorama
-Installation:
+
+### 5. How to Run
+Make this structure:
+
+
+## How to Run
+
+### Requirements
+
+- Python 3.8+
+- NumPy
+- Rich
+- Colorama
+
+### Installation
+
 
 pip install rich numpy colorama
 
@@ -109,17 +125,24 @@ Option	Description
 --cycles N	Number of sensor cycles
 --fast	Run without pacing delay
 --no-dash	Disable dashboard output
-Technologies
-Python
-Artificial Intelligence
-Fog Computing
-Edge AI
-IoT
-Smart Manufacturing
-Industry 5.0
-Project Goal
+
+### 6. Technologies
+Change to:
+
+
+## Technologies
+
+- Python
+- Artificial Intelligence
+- Fog Computing
+- Edge AI
+- IoT
+- Smart Manufacturing
+- Industry 5.0
+
+## Project Goal
 
 FogAI explores how AI-enabled fog computing can support faster and more resilient decision-making in industrial IoT environments, particularly when cloud connectivity is unreliable or unavailable.
 
-Project: Final Year Project
-Domain: AI / IoT / Fog Computing / Smart Manufacturing
+**Project:** Final Year Project  
+**Domain:** AI / IoT / Fog Computing / Smart Manufacturing
