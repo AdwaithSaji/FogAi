@@ -33,7 +33,7 @@ IoT Sensors
      │           │
  Local Action   Cloud
  (< 5 ms)       Service
-
+```
 ## Key Features
 
 - Real-time sensor data simulation
