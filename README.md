@@ -97,11 +97,6 @@ FogAi/
 └── README.md
 ```
 
-
-### 5. How to Run
-Make this structure:
-
-
 ## How to Run
 
 ### Requirements
@@ -125,10 +120,6 @@ Option	Description
 --cycles N	Number of sensor cycles
 --fast	Run without pacing delay
 --no-dash	Disable dashboard output
-
-### 6. Technologies
-Change to:
-
 
 ## Technologies
 
