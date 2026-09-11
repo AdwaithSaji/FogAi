@@ -46,7 +46,7 @@ IoT Sensors
 - Cloud routing for low-risk telemetry
 - Structured logs and decision reports
 
-#Decision Rules
+##Decision Rules
 Rule	Condition	Action
 R1	Temperature ≥ 90°C	Emergency Shutdown
 R2	Temperature ≥ 75°C	Alert
