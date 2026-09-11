@@ -110,9 +110,13 @@ FogAi/
 
 ```bash
 pip install rich numpy colorama
+```
+
+```bash
 
 python main.py
-
+```
+```bash
 run.bat
 ```
 
