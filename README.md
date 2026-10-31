@@ -9,7 +9,7 @@ A low-latency, AI-driven fog architecture for real-time decision-making in smart
 
 <br />
 
-![Python](https://img.shields.io/badge/Python-3.8+-0b1620?style=flat-square&logo=python&logoColor=22d3ee)
+![Python](https://img.shields.io/badge/Python-3.8%2B-0b1620?style=flat-square&logo=python&logoColor=22d3ee)
 ![Flask](https://img.shields.io/badge/Flask-dashboard-0b1620?style=flat-square&logo=flask&logoColor=22d3ee)
 ![NumPy](https://img.shields.io/badge/NumPy-0b1620?style=flat-square&logo=numpy&logoColor=22d3ee)
 ![Rich](https://img.shields.io/badge/Rich-terminal%20UI-0b1620?style=flat-square&logoColor=22d3ee)
