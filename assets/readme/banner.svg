@@ -1,46 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 340" width="1280" height="340" role="img" aria-labelledby="t d">
-  <title id="t">FogAI</title>
-  <desc id="d">FogAI: IoT sensors feed a fog node that decides locally in a few milliseconds, while the cloud round trip takes about 120 milliseconds in the simulation model.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 380" width="1200" height="380" role="img" aria-labelledby="t">
+  <title id="t">FogAI: Safety-critical IoT decisions made on the fog node, not on a cloud round trip. Simulated end to end. Stack: python, numpy, flask, rich.</title>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0c1620"/><stop offset="1" stop-color="#070b10"/></linearGradient>
-    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.35"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
-    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#ffffff" stroke-opacity="0.035"/></pattern>
+    <pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><path d="M24 0H0V24" fill="none" stroke="#0f161e" stroke-width="1"/></pattern>
+    <radialGradient id="glow" cx="860" cy="196" r="270" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3fe0ee" stop-opacity=".14"/><stop offset="1" stop-color="#3fe0ee" stop-opacity="0"/></radialGradient>
+    <linearGradient id="fade" x1="0" x2="1"><stop offset="0" stop-color="#07090c" stop-opacity=".92"/><stop offset=".5" stop-color="#07090c" stop-opacity=".55"/><stop offset="1" stop-color="#07090c" stop-opacity="0"/></linearGradient>
+    <clipPath id="frame"><rect width="1200" height="380" rx="14"/></clipPath>
   </defs>
-  <rect width="1280" height="340" rx="16" fill="url(#bg)"/>
-  <rect width="1280" height="340" rx="16" fill="url(#grid)"/>
-  <rect x="0.5" y="0.5" width="1279" height="339" rx="15.5" fill="none" stroke="#ffffff" stroke-opacity="0.08"/>
-  <g font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
-    <text x="72" y="104" font-size="15" letter-spacing="4" fill="#22d3ee" font-weight="600">LOW-LATENCY INTELLIGENT IOT</text>
-    <text x="72" y="190" font-size="92" letter-spacing="6" fill="#eef6f8" font-weight="700">FOGAI</text>
-    <text x="74" y="234" font-size="23" fill="#8aa0aa">Decisions at the fog layer, not a cloud round trip.</text>
-    <g font-size="14" fill="#c5d3d8">
-      <rect x="72" y="262" width="96" height="30" rx="15" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.12"/><text x="120" y="282" text-anchor="middle">Python</text>
-      <rect x="178" y="262" width="150" height="30" rx="15" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.12"/><text x="253" y="282" text-anchor="middle">Fog computing</text>
-      <rect x="338" y="262" width="128" height="30" rx="15" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-opacity="0.12"/><text x="402" y="282" text-anchor="middle">Simulation</text>
-    </g>
+  <style>
+    .sans { font-family: 'Inter', 'Segoe UI', 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    .mono { font-family: 'JetBrains Mono', 'SFMono-Regular', 'Cascadia Code', Consolas, 'Liberation Mono', Menlo, monospace; }
+    .face { fill: #0a1317; stroke: #2a6d75; stroke-width: 1.1; stroke-linejoin: round; }
+    .hl { fill: rgba(63, 224, 238, .16); stroke: #3fe0ee; stroke-width: 1.3; stroke-linejoin: round; }
+    .inner { fill: none; stroke: #15303a; stroke-width: 1; }
+    .side-l { fill: #070d10; stroke: #1a3a41; stroke-width: 1; stroke-linejoin: round; }
+    .side-r { fill: #091216; stroke: #1a3a41; stroke-width: 1; stroke-linejoin: round; }
+    .wire { stroke: #2a6d75; stroke-width: 1.3; fill: none; }
+    .bar { stroke: #3fe0ee; stroke-width: 1.8; stroke-linecap: round; fill: none; }
+    .spine { stroke: #26414a; stroke-width: 1; fill: none; }
+    .lead { stroke: #26414a; stroke-width: 1; fill: none; }
+    .name { font-size: 12.5px; fill: #c3ccd6; letter-spacing: .14em; }
+    .sub { font-size: 11.5px; fill: #56636f; letter-spacing: .02em; }
+  </style>
+  <g clip-path="url(#frame)">
+    <rect width="1200" height="380" fill="#07090c"/>
+    <rect width="1200" height="380" fill="url(#grid)"/>
+    <rect width="1200" height="380" fill="url(#glow)"/>
+    <rect width="700" height="380" fill="url(#fade)"/>
   </g>
-  <g transform="translate(640 0)">
-    <circle cx="250" cy="170" r="90" fill="url(#glow)"/>
-    <g fill="#0c1620" stroke="#4ade80" stroke-width="2.5">
-      <circle cx="30" cy="130" r="9"/><circle cx="30" cy="170" r="9"/><circle cx="30" cy="210" r="9"/>
-    </g>
-    <g stroke="#22d3ee" stroke-width="2" stroke-opacity="0.8">
-      <line x1="40" y1="130" x2="200" y2="162"/><line x1="40" y1="170" x2="200" y2="170"/><line x1="40" y1="210" x2="200" y2="178"/>
-    </g>
-    <rect x="205" y="140" width="90" height="60" rx="12" fill="#0b2230" stroke="#22d3ee" stroke-width="3"/>
-    <text x="250" y="176" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="700" fill="#22d3ee" letter-spacing="2">FOG</text>
-    <line x1="300" y1="160" x2="470" y2="96" stroke="#60a5fa" stroke-width="2" stroke-dasharray="3 7" stroke-linecap="round"/>
-    <rect x="470" y="66" width="86" height="56" rx="12" fill="#0c1a2a" stroke="#60a5fa" stroke-width="2.5" stroke-opacity="0.75"/>
-    <text x="513" y="100" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700" fill="#60a5fa" letter-spacing="2">CLOUD</text>
-    <line x1="300" y1="182" x2="470" y2="236" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"/>
-    <rect x="470" y="208" width="86" height="56" rx="12" fill="#0c2018" stroke="#4ade80" stroke-width="2.5"/>
-    <text x="513" y="233" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700" fill="#4ade80" letter-spacing="1">LOCAL</text>
-    <text x="513" y="251" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700" fill="#4ade80" letter-spacing="1">ACTION</text>
-    <g font-size="14" fill="#a9bcc4">
-      <text x="30" y="250" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">sensors</text>
-      <text x="372" y="98" text-anchor="middle" font-family="Consolas, 'Courier New', monospace" fill="#60a5fa">~120 ms</text>
-      <text x="372" y="252" text-anchor="middle" font-family="Consolas, 'Courier New', monospace" fill="#4ade80">~3 ms</text>
-    </g>
-    <text x="300" y="300" text-anchor="middle" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif" font-size="11" fill="#6f8791" letter-spacing="1">LATENCIES FROM THE SIMULATION MODEL</text>
+  <rect x=".5" y=".5" width="1199" height="379" rx="14" fill="none" stroke="#1a222d"/>
+  <g stroke="#2a3542" stroke-width="1.2" fill="none"><path d="M28 44V28H44M1156 28H1172V44M1172 336V352H1156M44 352H28V336"/></g>
+  <path d="M64 340H640" stroke="#141b23"/>
+
+  <text class="mono" x="64" y="66" font-size="12" fill="#4a5664" letter-spacing=".12em">~/FogAi</text>
+  <text class="mono" x="64" y="128" font-size="13" fill="#3fe0ee" letter-spacing=".22em">FOG COMPUTING &#183; INDUSTRIAL IOT</text>
+  <text class="sans" x="62" y="190" font-size="58" font-weight="600" fill="#e8edf2" letter-spacing="-.01em" textLength="158" lengthAdjust="spacingAndGlyphs">FogAI</text>
+  <text class="sans" x="64" y="232" font-size="20" fill="#8b97a5">Safety-critical IoT decisions made on the fog node,</text>
+  <text class="sans" x="64" y="256" font-size="20" fill="#8b97a5">not on a cloud round trip. Simulated end to end.</text>
+  <g class="mono" font-size="13" fill="#5b6878">
+    <text x="64" y="297">stack&#160;&#160;&#160;<tspan fill="#9aa6b3">python &#183; numpy &#183; flask &#183; rich</tspan></text>
+    <text x="64" y="319">scope&#160;&#160;&#160;<tspan fill="#9aa6b3">simulation &#183; IEEE paper source</tspan></text>
   </g>
+  <g class="mono" font-size="12" letter-spacing=".14em" fill="#3fe0ee"><circle cx="1068" cy="62" r="3.5" fill="#3fe0ee"/><text x="1136" y="66" text-anchor="end">PUBLIC</text></g>
+
+  <g><polygon points="742.2,293.0 860.0,322.9 860.0,329.9 742.2,300.0" class="side-l"/><polygon points="977.8,293.0 860.0,322.9 860.0,329.9 977.8,300.0" class="side-r"/><polygon points="860.0,263.1 977.8,293.0 860.0,322.9 742.2,293.0" class="face"/><polygon points="860.0,267.5 960.5,293.0 860.0,318.5 759.5,293.0" class="inner"/><path d="M789.0 296.1L851.3 287.7" class="wire"/><path d="M808.0 300.9L851.3 287.7" class="wire"/><path d="M827.1 305.8L851.3 287.7" class="wire"/><path d="M846.1 310.6L851.3 287.7" class="wire"/><ellipse cx="865.2" cy="248.2" rx="52" ry="16" fill="#3fe0ee" opacity=".12"/><polygon points="837.5,254.2 865.2,261.2 865.2,295.2 837.5,288.2" class="side-l"/><polygon points="892.9,254.2 865.2,261.2 865.2,295.2 892.9,288.2" class="side-r"/><polygon points="865.2,247.1 892.9,254.2 865.2,261.2 837.5,254.2" class="face"/><polygon points="837.5,251.2 865.2,258.2 865.2,261.2 837.5,254.2" class="side-l"/><polygon points="892.9,251.2 865.2,258.2 865.2,261.2 892.9,254.2" class="side-r"/><polygon points="865.2,244.1 892.9,251.2 865.2,258.2 837.5,251.2" class="hl"/><ellipse cx="789.0" cy="296.1" rx="5.5" ry="2.8" fill="#0a1317" stroke="#3fe0ee" stroke-width="1.3"/><ellipse cx="808.0" cy="300.9" rx="5.5" ry="2.8" fill="#0a1317" stroke="#3fe0ee" stroke-width="1.3"/><ellipse cx="827.1" cy="305.8" rx="5.5" ry="2.8" fill="#0a1317" stroke="#3fe0ee" stroke-width="1.3"/><ellipse cx="846.1" cy="310.6" rx="5.5" ry="2.8" fill="#0a1317" stroke="#3fe0ee" stroke-width="1.3"/><polygon points="886.0,287.4 905.0,292.2 905.0,306.2 886.0,301.4" class="side-l"/><polygon points="924.1,287.4 905.0,292.2 905.0,306.2 924.1,301.4" class="side-r"/><polygon points="905.0,282.5 924.1,287.4 905.0,292.2 886.0,287.4" class="face"/><path d="M879.1 283.7L895.5 290.9" class="bar"/><path d="M865.2 250.2L865.2 145.2" class="wire" stroke-dasharray="2 4"/><polygon points="825.4,139.0 873.9,151.3 873.9,155.3 825.4,143.0" class="side-l"/><polygon points="922.4,139.0 873.9,151.3 873.9,155.3 922.4,143.0" class="side-r"/><polygon points="873.9,126.6 922.4,139.0 873.9,151.3 825.4,139.0" class="face"/><polygon points="873.9,129.3 912.0,139.0 873.9,148.6 835.8,139.0" class="inner"/></g>
+  <g><path d="M904.1 145.1H918.1L992 145.1H996" class="lead"/><text x="1002" y="146.1" class="mono name">03&#160;&#160;CLOUD</text><text x="1002" y="161.1" class="mono sub">~120 ms (simulated)</text></g><g><path d="M885.1 273.7H899.1L992 273.7H996" class="lead"/><text x="1002" y="274.7" class="mono name">02&#160;&#160;FOG NODE</text><text x="1002" y="289.7" class="mono sub">rules + risk score</text></g><g><path d="M852.1 310.6H866.1L992 317.7H996" class="lead"/><text x="1002" y="318.7" class="mono name">01&#160;&#160;SENSORS</text><text x="1002" y="333.7" class="mono sub">temp · vibration · cpu</text></g>
 </svg>
